@@ -1,8 +1,12 @@
 package provider
 
 interface ProviderInterface {
-    fun get(): String
 
     var active: Boolean
+    var alive: Boolean
+    fun get(): String
+    fun check(): Boolean {
+        return this.alive
+    }
 
 }
