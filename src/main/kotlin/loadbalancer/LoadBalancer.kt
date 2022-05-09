@@ -55,7 +55,18 @@ class LoadBalancer(private val checkPeriod : Long) {
         this.providers.filter { it.active }.forEach {
             if(!it.check()) {
                 this.exclude(it.get())
+                it.heartbeatChecked = false
                 println("Provider ${it.get()} not active. Excluding...")
+            }
+        }
+        this.providers.filter { !it.active }.forEach {
+            if(it.check()) {
+                if(it.heartbeatChecked) {
+                    this.include(it.get())
+                    println("Provider ${it.get()} active. Including...")
+                } else {
+                    it.heartbeatChecked = true
+                }
             }
         }
     }

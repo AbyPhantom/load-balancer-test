@@ -51,9 +51,16 @@ fun main() {
     println()
 
     println("Testing heartbeat check:")
-    IntStream.range(0, 5).forEach { loadBalancer.providers.elementAt(it).alive = false }
+    IntStream.range(0, 5).forEach { loadBalancer.providers.elementAt(it).active = false }
+    IntStream.range(0, 3).forEach { loadBalancer.providers.elementAt(it).alive = false }
+    IntStream.range(3, 5).forEach { loadBalancer.providers.elementAt(it).alive = true }
+
+    IntStream.range(5, 10).forEach { loadBalancer.providers.elementAt(it).active = true }
+    IntStream.range(5, 8).forEach { loadBalancer.providers.elementAt(it).alive = false }
+    IntStream.range(8, 10).forEach { loadBalancer.providers.elementAt(it).alive = true }
+
     loadBalancer.startHeartbeat()
-    Thread.sleep(10 * 1000)
+    Thread.sleep(20 * 1000)
 
 }
 
