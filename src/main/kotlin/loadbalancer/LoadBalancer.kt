@@ -4,10 +4,17 @@ import exceptions.CollectionSizeException
 import iterators.ProviderGenerator
 import iterators.implementation.RandomGenerator
 import provider.ProviderInterface
+import kotlin.concurrent.thread
 
-class LoadBalancer {
+class LoadBalancer(private val checkPeriod : Long) {
 
     private val capacity: Int = 10
+    private val heartbeat: Thread = thread(start = false, isDaemon = true) {
+        while(true) {
+            this.check()
+            Thread.sleep(this.checkPeriod)
+        }
+    }
 
     var generator: ProviderGenerator = RandomGenerator()
 
@@ -41,6 +48,20 @@ class LoadBalancer {
         val provider = this.providers.find { it.get() == identifier }
             ?: throw NoSuchElementException("Provider with identifier $identifier is not found")
         provider.active = false
+    }
+
+    private fun check() : Unit {
+        println("Checking providers...")
+        this.providers.filter { it.active }.forEach {
+            if(!it.check()) {
+                this.exclude(it.get())
+                println("Provider ${it.get()} not active. Excluding...")
+            }
+        }
+    }
+
+    fun startHeartbeat() : Unit {
+        this.heartbeat.start()
     }
 
 }

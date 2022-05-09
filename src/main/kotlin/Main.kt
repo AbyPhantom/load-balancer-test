@@ -8,8 +8,7 @@ import kotlin.streams.asSequence
 
 fun main() {
 
-    val loadBalancer : LoadBalancer = LoadBalancer()
-    //loadBalancer.iterator = RandomIterator(0)
+    val loadBalancer : LoadBalancer = LoadBalancer(5000)
 
     try {
         loadProviders(loadBalancer, 0, 12)
@@ -48,6 +47,13 @@ fun main() {
     IntStream.range(0, 20).forEach { _ ->
         println("${loadBalancer.get()}")
     }
+
+    println()
+
+    println("Testing heartbeat check:")
+    IntStream.range(0, 5).forEach { loadBalancer.providers.elementAt(it).alive = false }
+    loadBalancer.startHeartbeat()
+    Thread.sleep(10 * 1000)
 
 }
 
