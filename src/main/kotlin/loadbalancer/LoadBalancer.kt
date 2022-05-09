@@ -9,7 +9,7 @@ class LoadBalancer {
 
     private val capacity: Int = 10
 
-    var iterator: ProviderGenerator = RandomGenerator()
+    var generator: ProviderGenerator = RandomGenerator()
 
     var providers: Set<ProviderInterface> = LinkedHashSet<ProviderInterface>()
         private set
@@ -26,9 +26,21 @@ class LoadBalancer {
             throw CollectionSizeException("Number of providers must be greater than 0")
         }
 
-        val nextKey = this.iterator.next(this.providers.size)
+        val nextKey = this.generator.next(this.providers.filter { it.active }.size)
 
-        return this.providers.elementAt(nextKey).get()
+        return this.providers.asSequence().filter { it.active }.elementAt(nextKey).get()
+    }
+
+    fun include(identifier: String) : Unit {
+        val provider = this.providers.find { it.get() == identifier }
+            ?: throw NoSuchElementException("Provider with identifier $identifier is not found")
+        provider.active = true
+    }
+
+    fun exclude(identifier: String) : Unit {
+        val provider = this.providers.find { it.get() == identifier }
+            ?: throw NoSuchElementException("Provider with identifier $identifier is not found")
+        provider.active = false
     }
 
 }

@@ -35,8 +35,16 @@ fun main() {
 
     println()
 
-    loadBalancer.iterator = RoundRobinGenerator()
+    loadBalancer.generator = RoundRobinGenerator()
     println("Getting round robin provider identifiers (20 iterations):")
+    IntStream.range(0, 20).forEach { _ ->
+        println("${loadBalancer.get()}")
+    }
+
+    println()
+
+    println("Round Robin with 5 providers excluded")
+    IntStream.range(0, 5).forEach { loadBalancer.exclude("provider_$it") }
     IntStream.range(0, 20).forEach { _ ->
         println("${loadBalancer.get()}")
     }
