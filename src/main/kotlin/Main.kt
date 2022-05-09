@@ -1,4 +1,5 @@
 import exceptions.CollectionSizeException
+import iterators.implementation.RoundRobinGenerator
 import loadbalancer.LoadBalancer
 import provider.ProviderInterface
 import provider.implementation.DefaultProvider
@@ -27,10 +28,18 @@ fun main() {
     println()
 
     println("Getting random provider identifiers (10 iterations):")
-    IntStream.range(0, 10).asSequence()
+    IntStream.range(0, 10)
         .forEach { _ ->
             println("${loadBalancer.get()}")
         }
+
+    println()
+
+    loadBalancer.iterator = RoundRobinGenerator()
+    println("Getting round robin provider identifiers (20 iterations):")
+    IntStream.range(0, 20).forEach { _ ->
+        println("${loadBalancer.get()}")
+    }
 
 }
 

@@ -1,15 +1,15 @@
 package loadbalancer
 
 import exceptions.CollectionSizeException
-import iterators.ProviderIterator
-import iterators.implementation.RandomIterator
+import iterators.ProviderGenerator
+import iterators.implementation.RandomGenerator
 import provider.ProviderInterface
 
 class LoadBalancer {
 
     private val capacity: Int = 10
 
-    var iterator: ProviderIterator = RandomIterator(0)
+    var iterator: ProviderGenerator = RandomGenerator()
 
     var providers: Set<ProviderInterface> = LinkedHashSet<ProviderInterface>()
         private set
@@ -19,7 +19,6 @@ class LoadBalancer {
             throw CollectionSizeException("Maximum size of providers is ${this.capacity}")
         }
         this.providers = providers
-        this.iterator = this.iterator.new(this.providers.size)
     }
 
     fun get(): String {
@@ -27,7 +26,7 @@ class LoadBalancer {
             throw CollectionSizeException("Number of providers must be greater than 0")
         }
 
-        val nextKey = this.iterator.next()
+        val nextKey = this.iterator.next(this.providers.size)
 
         return this.providers.elementAt(nextKey).get()
     }
