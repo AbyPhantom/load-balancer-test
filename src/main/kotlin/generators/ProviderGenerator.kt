@@ -1,4 +1,4 @@
-package iterators
+package generators
 
 abstract class ProviderGenerator {
 

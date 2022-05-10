@@ -1,6 +1,6 @@
-package iterators.implementation
+package generators.implementation
 
-import iterators.ProviderGenerator
+import generators.ProviderGenerator
 import java.util.concurrent.ThreadLocalRandom
 
 class RandomGenerator : ProviderGenerator() {

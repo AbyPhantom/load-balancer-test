@@ -1,8 +1,8 @@
 import exceptions.CollectionSizeException
-import iterators.implementation.RoundRobinGenerator
+import generators.implementation.RoundRobinGenerator
 import loadbalancer.LoadBalancer
-import provider.ProviderInterface
-import provider.implementation.DefaultProvider
+import providers.ProviderInterface
+import providers.implementation.DelayedProvider
 import java.util.stream.IntStream
 import kotlin.streams.asSequence
 
@@ -50,6 +50,18 @@ fun main() {
 
     println()
 
+    println("Testing requests")
+
+    for(i in 0..100) {
+        loadBalancer.request()
+    }
+
+    //while(true){}
+    Thread.sleep(50)
+    //loadBalancer.shutdown()
+
+    println()
+
     println("Testing heartbeat check:")
     IntStream.range(0, 5).forEach { loadBalancer.providers.values.elementAt(it).active = false }
     IntStream.range(0, 3).forEach { loadBalancer.providers.values.elementAt(it).alive = false }
@@ -62,13 +74,15 @@ fun main() {
     loadBalancer.startHeartbeat()
     Thread.sleep(20 * 1000)
 
+    loadBalancer.shutdown()
+
 }
 
 fun loadProviders(loadBalancer: LoadBalancer, rangeStart: Int, rangeFinish: Int) {
     val namePrefix : String = "provider_"
 
     val providers : Map<String, ProviderInterface> = IntStream.range(rangeStart, rangeFinish).asSequence()
-        .map { Pair(namePrefix+it, DefaultProvider(namePrefix+it)) }
+        .map { Pair(namePrefix+it, DelayedProvider(namePrefix+it)) }
         .toMap<String, ProviderInterface>();
 
     loadBalancer.register(providers)
