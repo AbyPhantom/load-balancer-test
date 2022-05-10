@@ -22,7 +22,7 @@ fun main() {
     loadProviders(loadBalancer, 0, 10)
 
     println("Load balancer provider count: ${loadBalancer.providers.size}")
-    loadBalancer.providers.forEach { println("Provider ${it.get()} loaded.") }
+    loadBalancer.providers.forEach { (_, provider) -> println("Provider ${provider.get()} loaded.") }
 
     println()
 
@@ -51,13 +51,13 @@ fun main() {
     println()
 
     println("Testing heartbeat check:")
-    IntStream.range(0, 5).forEach { loadBalancer.providers.elementAt(it).active = false }
-    IntStream.range(0, 3).forEach { loadBalancer.providers.elementAt(it).alive = false }
-    IntStream.range(3, 5).forEach { loadBalancer.providers.elementAt(it).alive = true }
+    IntStream.range(0, 5).forEach { loadBalancer.providers.values.elementAt(it).active = false }
+    IntStream.range(0, 3).forEach { loadBalancer.providers.values.elementAt(it).alive = false }
+    IntStream.range(3, 5).forEach { loadBalancer.providers.values.elementAt(it).alive = true }
 
-    IntStream.range(5, 10).forEach { loadBalancer.providers.elementAt(it).active = true }
-    IntStream.range(5, 8).forEach { loadBalancer.providers.elementAt(it).alive = false }
-    IntStream.range(8, 10).forEach { loadBalancer.providers.elementAt(it).alive = true }
+    IntStream.range(5, 10).forEach { loadBalancer.providers.values.elementAt(it).active = true }
+    IntStream.range(5, 8).forEach { loadBalancer.providers.values.elementAt(it).alive = false }
+    IntStream.range(8, 10).forEach { loadBalancer.providers.values.elementAt(it).alive = true }
 
     loadBalancer.startHeartbeat()
     Thread.sleep(20 * 1000)
@@ -67,9 +67,9 @@ fun main() {
 fun loadProviders(loadBalancer: LoadBalancer, rangeStart: Int, rangeFinish: Int) {
     val namePrefix : String = "provider_"
 
-    val providers : HashSet<ProviderInterface> = IntStream.range(rangeStart, rangeFinish).asSequence()
-        .map { DefaultProvider(namePrefix+it) }
-        .toHashSet();
+    val providers : Map<String, ProviderInterface> = IntStream.range(rangeStart, rangeFinish).asSequence()
+        .map { Pair(namePrefix+it, DefaultProvider(namePrefix+it)) }
+        .toMap<String, ProviderInterface>();
 
     loadBalancer.register(providers)
 }

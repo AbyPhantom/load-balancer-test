@@ -18,10 +18,10 @@ class LoadBalancer(private val checkPeriod : Long) {
 
     var generator: ProviderGenerator = RandomGenerator()
 
-    var providers: Set<ProviderInterface> = LinkedHashSet<ProviderInterface>()
+    var providers: Map<String, ProviderInterface> = HashMap<String, ProviderInterface>()
         private set
 
-    fun register(providers: Set<ProviderInterface>) {
+    fun register(providers: Map<String, ProviderInterface>) {
         if(providers.size > this.capacity) {
             throw CollectionSizeException("Maximum size of providers is ${this.capacity}")
         }
@@ -33,39 +33,41 @@ class LoadBalancer(private val checkPeriod : Long) {
             throw CollectionSizeException("Number of providers must be greater than 0")
         }
 
-        val nextKey = this.generator.next(this.providers.filter { it.active }.size)
+        val keys = this.providers.filter { (_, entry) -> entry.active }.keys
+        val nextKeyIndex = this.generator.next(keys.size)
+        val nextKey = keys.elementAt(nextKeyIndex)
 
-        return this.providers.asSequence().filter { it.active }.elementAt(nextKey).get()
+        return this.providers[nextKey]?.get()
+            ?: throw NoSuchElementException("Provider with identifier $nextKey is not found")
     }
 
     fun include(identifier: String) : Unit {
-        val provider = this.providers.find { it.get() == identifier }
+        val provider = this.providers[identifier]
             ?: throw NoSuchElementException("Provider with identifier $identifier is not found")
         provider.active = true
     }
 
     fun exclude(identifier: String) : Unit {
-        val provider = this.providers.find { it.get() == identifier }
+        val provider = this.providers[identifier]
             ?: throw NoSuchElementException("Provider with identifier $identifier is not found")
         provider.active = false
     }
 
     private fun check() : Unit {
         println("Checking providers...")
-        this.providers.filter { it.active }.forEach {
-            if(!it.check()) {
-                this.exclude(it.get())
-                it.heartbeatChecked = false
-                println("Provider ${it.get()} not active. Excluding...")
-            }
-        }
-        this.providers.filter { !it.active }.forEach {
-            if(it.check()) {
-                if(it.heartbeatChecked) {
-                    this.include(it.get())
-                    println("Provider ${it.get()} active. Including...")
-                } else {
-                    it.heartbeatChecked = true
+        this.providers.forEach { (key, provider) ->
+            run {
+                if (provider.active && !provider.check()) {
+                    this.exclude(key)
+                    provider.heartbeatChecked = false
+                    println("Provider $key not active. Excluding...")
+                } else if (!provider.active && provider.check()) {
+                    if(provider.heartbeatChecked) {
+                        this.include(key)
+                        println("Provider $key active. Including...")
+                    } else {
+                        provider.heartbeatChecked = true
+                    }
                 }
             }
         }
