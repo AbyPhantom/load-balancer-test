@@ -10,7 +10,7 @@ class DelayedProvider(private val identifier: String) : ProviderInterface {
     override var capacity: Int = 3
 
     override fun get(): String {
-        Thread.sleep(50)
+        Thread.sleep(1000)
         return this.identifier
     }
 

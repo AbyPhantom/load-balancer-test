@@ -36,8 +36,8 @@ class LoadBalancer(private val checkPeriod : Long) {
     private lateinit var requestDispatcher: RequestDispatcher
 
     fun register(providers: Map<String, ProviderInterface>) {
-        if(providers.size > this.capacity) {
-            throw CollectionSizeException("Maximum size of providers is ${this.capacity}")
+        if(providers.size > this.capacity || providers.isEmpty()) {
+            throw CollectionSizeException("Maximum size of providers is ${this.capacity} and there has to be at least one provider.")
         }
         this.providers = providers
         val requestCapacity: Int = this.getRequestCapacity()
@@ -130,6 +130,10 @@ class LoadBalancer(private val checkPeriod : Long) {
     fun startHeartbeat() : Unit {
         this.checkForHeartbeat = true
         this.heartbeat.start()
+    }
+
+    fun stopHeartbeat() {
+        this.checkForHeartbeat = false
     }
 
     fun shutdown() {
