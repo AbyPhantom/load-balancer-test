@@ -13,6 +13,18 @@ import kotlin.NoSuchElementException
 import kotlin.collections.HashMap
 import kotlin.concurrent.thread
 
+/**
+ * A representation of a load balancer.
+ *
+ * Add providers to it using .register() method and call on the using .request()
+ *
+ * You can manually include and exclude providers after registering them.
+ *
+ * To use the heartbeat check use .startHeartbeat()
+ *
+ * @param checkPeriod period (in milliseconds) on which heartbeat will occur
+ * @constructor Returns an instance of this class
+ */
 class LoadBalancer(private val checkPeriod : Long) {
 
     private val capacity: Int = 10
@@ -25,6 +37,9 @@ class LoadBalancer(private val checkPeriod : Long) {
         }
     }
 
+    /**
+     * Generator used to provide the next provider name of the get() calls.
+     */
     var generator: ProviderGenerator = RandomGenerator()
 
     var providers: Map<String, ProviderInterface> = HashMap<String, ProviderInterface>()
@@ -35,6 +50,13 @@ class LoadBalancer(private val checkPeriod : Long) {
 
     private lateinit var requestDispatcher: RequestDispatcher
 
+    /**
+     * Registers a Map<String, ProviderInterface> of providers to the LoadBalancer
+     *
+     * Always use this method before using the LoadBalancer
+     *
+     * @param providers
+     */
     fun register(providers: Map<String, ProviderInterface>) {
         if(providers.size > this.capacity || providers.isEmpty()) {
             throw CollectionSizeException("Maximum size of providers is ${this.capacity} and there has to be at least one provider.")
@@ -48,6 +70,9 @@ class LoadBalancer(private val checkPeriod : Long) {
         this.requestDispatcher.start()
     }
 
+    /**
+     * @return A unique identifier of the next provider as decided by generator.
+     */
     fun get(): String {
         if(this.providers.isEmpty()) {
             throw CollectionSizeException("Number of providers must be greater than 0")
@@ -59,6 +84,9 @@ class LoadBalancer(private val checkPeriod : Long) {
             ?: throw NoSuchElementException("Provider with identifier $nextKey is not found")
     }
 
+    /**
+     * Send an asynchronous request to next provider as decided by generator.
+     */
     fun request() {
         if(this.providers.isEmpty()) {
             throw CollectionSizeException("Number of providers must be greater than 0")
@@ -74,7 +102,14 @@ class LoadBalancer(private val checkPeriod : Long) {
         this.requestDispatcher.submitRequest(request)
     }
 
-    fun include(identifier: String) : Unit {
+    /**
+     * Include the provider to be used in the get and request methods.
+     *
+     * Manual setting will get overridden by using heartbeat.
+     *
+     * @param identifier A key of the providers Map
+     */
+    fun include(identifier: String) {
         val provider = this.providers[identifier]
             ?: throw NoSuchElementException("Provider with identifier $identifier is not found")
         if(!provider.active) {
@@ -83,7 +118,14 @@ class LoadBalancer(private val checkPeriod : Long) {
         }
     }
 
-    fun exclude(identifier: String) : Unit {
+    /**
+     * Exclude the provider from being used in the get and request methods.
+     *
+     * Manual setting will get overridden by using heartbeat.
+     *
+     * @param identifier A key of the providers Map
+     */
+    fun exclude(identifier: String) {
         val provider = this.providers[identifier]
             ?: throw NoSuchElementException("Provider with identifier $identifier is not found")
         if(provider.active) {
@@ -92,7 +134,7 @@ class LoadBalancer(private val checkPeriod : Long) {
         }
     }
 
-    private fun check() : Unit {
+    private fun check() {
         println("Checking providers...")
         this.providers.forEach { (key, provider) ->
             run {
@@ -127,15 +169,24 @@ class LoadBalancer(private val checkPeriod : Long) {
         return providers.asSequence().sumOf { (_, entry) -> entry.capacity }
     }
 
+    /**
+     * Starts the heartbeat monitor. Using this will automatically include and exclude providers.
+     */
     fun startHeartbeat() : Unit {
         this.checkForHeartbeat = true
         this.heartbeat.start()
     }
 
+    /**
+     * Stops the heartbeat monitor. Manual inclusion and exclusion will be possible again.
+     */
     fun stopHeartbeat() {
         this.checkForHeartbeat = false
     }
 
+    /**
+     * Use when LoadBalancer is no longer needed. This stops heartbeat monitor and cleans up RequestDispatcher.
+     */
     fun shutdown() {
         this.checkForHeartbeat = false
         this.requestDispatcher.stop()

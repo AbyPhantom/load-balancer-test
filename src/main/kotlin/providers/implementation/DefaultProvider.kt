@@ -2,6 +2,9 @@ package providers.implementation
 
 import providers.ProviderInterface
 
+/**
+ * Default provider implementation. All the properties and methods are inherited from ProviderInterface.
+ */
 class DefaultProvider(private val identifier: String) : ProviderInterface {
 
     override var active: Boolean = true
